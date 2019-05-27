@@ -31,8 +31,10 @@ class CognitoUser(Cognito):
             if k not in django_fields:
                 extra_attrs.update({k: user_attrs.pop(k, None)})
         if getattr(settings, 'COGNITO_CREATE_UNKNOWN_USERS', True):
+            is_staff = getattr(settings, 'COGNITO_ALLOW_BACKEND_ACCESS', False)
             user, created = CognitoUser.user_class.objects.update_or_create(
                 username=username,
+                is_staff=is_staff,
                 defaults=user_attrs)
         else:
             try:
