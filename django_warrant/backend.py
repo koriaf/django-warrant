@@ -6,6 +6,7 @@ from botocore.exceptions import ClientError
 from django.conf import settings
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.utils.six import iteritems
 
 from warrant import Cognito
@@ -36,6 +37,13 @@ class CognitoUser(Cognito):
                 username=username,
                 is_staff=is_staff,
                 defaults=user_attrs)
+            aws_groups_response = self.client.admin_list_groups_for_user(
+                    Username=username,
+                    UserPoolId=settings.COGNITO_USER_POOL_ID)
+            aws_groups_list = [entry['GroupName'] for entry in aws_groups_response['Groups']]
+            groups = Group.objects.filter(name__in=aws_groups_list)
+            for group in groups:
+                user.groups.add(group)
         else:
             try:
                 user = CognitoUser.user_class.objects.get(username=username)
